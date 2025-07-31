@@ -102,7 +102,7 @@ continuous_scale <- interpolate_palette(
   column = "estimate",
   method = "equal",
   n = 5,
-  palette = magma
+  palette = plasma
 )
 
 hi_map |>
@@ -127,7 +127,29 @@ hi_map |>
 Replace `plasma` with another palette (e.g., `viridis`, `magma`, or `cividis`). Which one feels the most readable? Why?
 
 ```{r}
-palette = magma
+###I tested all three color palettes and preferred the Magma palette the most. The colors were bright and radiant without being overly intense or resembling highlighter tones. Viridis appeared more muted, but I didn't like how the colors looked side by side, it lacked visual harmony. Cividis was the least effective, as it was generally hard to read and distinguish between colors.
+
+continuous_scale <- interpolate_palette(
+  data = hi_median_income,
+  column = "estimate",
+  method = "equal",
+  n = 5,
+  palette = magma
+)
+
+hi_map |>
+  add_fill_layer(
+    id = "hi_tracts",
+    source = hi_median_income,
+    fill_color = continuous_scale$expression,
+    fill_opacity = 0.5
+  ) |>
+  add_legend(
+    "Median Income in Hawaii",
+    values = get_legend_labels(continuous_scale, digits = 0),
+    colors = get_legend_colors(continuous_scale),
+    type = "continuous"
+  )
 ```
 
 Document your reasoning in a comment above your code.
@@ -193,7 +215,9 @@ When designing categorical maps: - Choose palettes that are **visually distinct*
 Here’s how we apply quantile classification to Hawaii's Median Income:
 
 ```{r}
-q_class <- step_quantile(
+##I ran both methods and found that step_equal_interval() is good for creating simple, evenly spaced classes, while step_jenks() is better for revealing real data patterns and outliers. Although equal interval feels more balanced, it can oversimplify the data, whereas Jenks captures more detail, but sometimes that extra detail isn't necessary for the story you're telling.    
+
+q_class <- step_jenks(
   data = hi_median_income,
   column = "estimate",
   n = 5,
@@ -241,9 +265,10 @@ Write 1–2 sentences reflecting on the **cartographic message** your choices im
 Can we create a map that only shows above/below the poverty line
 
 ```{r}
+##Alice 2023 2 Adults,1 Infant, 1Preschooler
 hi_median_income <- hi_median_income |>
   mutate(
-    mit_threshold = ifelse(estimate < 107689, "Below Line", "Above Line")
+    mit_threshold = ifelse(estimate < 110112, "Below Line", "Above Line")
   )
 ```
 
@@ -267,8 +292,6 @@ mapboxgl(bounds = hi_median_income) |>
     colors = unname(mit_colors),
     type = "categorical"
   )
-
-
 ```
 
 ## Question: How else can we think about the poverty line and map?
@@ -321,7 +344,9 @@ Instead of just `estimate`, add other descriptive info in your popup. For exampl
 
 ```{r}
 hi_median_income$popup <- glue(
-  "<strong>Tract:</strong> {hi_median_income$NAME}<br><strong>Median income:</strong> {hi_median_income$estimate}"
+  "<strong>Tract Name:</strong> {hi_median_income$NAME}<br>
+  <strong>GEOID :</strong> {hi_median_income$GEOID}<br>
+  <strong>Median Income:</strong> ${hi_median_income$estimate}"
 )
 ```
 
@@ -348,37 +373,36 @@ acs_vars <- load_variables(2022, "acs5", cache = TRUE)
 #### California Example
 
 ```{r}
-# Example: Median income in California
-ca_income <- get_acs(
+#Median income in Washington
+wa_income <- get_acs(
   geography = "tract",
-  variables = "B19013_001",
-  state = "CA",
+  variables = "B25077_001",
+  state = "WA",
   year = 2023,
   geometry = TRUE
 )
 
-ca_scale <- interpolate_palette(
-  data = ca_income,
+wa_scale <- interpolate_palette(
+  data = wa_income,
   column = "estimate",
-  method = "equal",
+  method = "quantile",
   n = 4,
   palette = viridisLite::viridis
 )
 
-mapboxgl(bounds = ca_income) |>
+mapboxgl(bounds = wa_income) |>
   add_fill_layer(
-    id = "ca_tracts",
-    source = ca_income,
-    fill_color = ca_scale$expression,
+    id = "wa_tracts",
+    source = wa_income,
+    fill_color = wa_scale$expression,
     fill_opacity = 0.5
   ) |>
   add_legend(
-    "Median income in California",
-    values = get_legend_labels(ca_scale, digits = 0, prefix = "$"),
-    colors = get_legend_colors(ca_scale),
+    "Median income in Washington",
+    values = get_legend_labels(wa_scale, digits = 0, prefix = "$"),
+    colors = get_legend_colors(wa_scale),
     type = "continuous"
   )
-
 ```
 
 🔍 Try: - Changing the variable to median home value- Switching the state (e.g., "HI", "NY", "TX") - Using a different styling function
