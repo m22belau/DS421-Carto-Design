@@ -1,9 +1,3 @@
-install.packages("tidyverse")
-install.packages("sf")
-install.packages("here")
-install.packages("shiny")
-install.packages("mapgl")
-
 library(tidyverse)
 library(sf)
 library(here)
